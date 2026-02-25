@@ -16,4 +16,5 @@ export const env = {
   OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY || '',
   CACHE_TTL: parseInt(process.env.CACHE_TTL || '300'),
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
 };

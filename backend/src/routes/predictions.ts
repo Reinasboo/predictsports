@@ -13,7 +13,10 @@ async function predictionsRoutes(fastify: FastifyInstance) {
       const cacheKey = `predictions:${matchId}`;
 
       try {
-        const cached = await redis.get(cacheKey);
+        let cached;
+        if (redis) {
+          cached = await redis.get(cacheKey);
+        }
         if (cached) {
           return JSON.parse(cached);
         }
@@ -43,7 +46,9 @@ async function predictionsRoutes(fastify: FastifyInstance) {
           ],
         };
 
-        await redis!.setEx(cacheKey, 300, JSON.stringify(predictions));
+        if (redis) {
+          await redis.setEx(cacheKey, 300, JSON.stringify(predictions));
+        }
 
         return reply.code(200).send({
           success: true,

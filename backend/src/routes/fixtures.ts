@@ -78,7 +78,9 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
         ];
 
         // Cache for 5 minutes
-        await redis!.setEx(cacheKey, 300, JSON.stringify(fixtures));
+        if (redis) {
+          await redis.setEx(cacheKey, 300, JSON.stringify(fixtures));
+        }
 
         return reply.code(200).send({
           success: true,
@@ -100,7 +102,10 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
       const cacheKey = 'fixtures:live:current';
 
       try {
-        const cached = await redis.get(cacheKey);
+        let cached;
+        if (redis) {
+          cached = await redis.get(cacheKey);
+        }
         if (cached) {
           return JSON.parse(cached);
         }
@@ -120,7 +125,9 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
           },
         ];
 
-        await redis!.setEx(cacheKey, 30, JSON.stringify(liveMatches)); // Cache for 30 seconds
+        if (redis) {
+          await redis.setEx(cacheKey, 30, JSON.stringify(liveMatches));
+        } // Cache for 30 seconds
 
         return reply.code(200).send({
           success: true,
@@ -142,7 +149,10 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
       const cacheKey = `fixture:${id}`;
 
       try {
-        const cached = await redis.get(cacheKey);
+        let cached;
+        if (redis) {
+          cached = await redis.get(cacheKey);
+        }
         if (cached) {
           return JSON.parse(cached);
         }
@@ -182,7 +192,9 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
           return reply.code(404).send({ success: false, error: 'Fixture not found' });
         }
 
-        await redis!.setEx(cacheKey, 600, JSON.stringify(fixture)); // Cache for 10 minutes
+        if (redis) {
+          await redis.setEx(cacheKey, 600, JSON.stringify(fixture));
+        } // Cache for 10 minutes
 
         return reply.code(200).send({ success: true, data: fixture });
       } catch (error) {
@@ -201,12 +213,13 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
       const cacheKey = `gameweek:${week}:${league}`;
 
       try {
-        const cached = await redis.get(cacheKey);
+        let cached;
+        if (redis) {
+          cached = await redis.get(cacheKey);
+        }
         if (cached) {
           return JSON.parse(cached);
         }
-
-        const gameweek = {
           week: parseInt(week),
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 604800000).toISOString(),
@@ -232,7 +245,9 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
           ],
         };
 
-        await redis!.setEx(cacheKey, 600, JSON.stringify(gameweek));
+        if (redis) {
+          await redis.setEx(cacheKey, 600, JSON.stringify(gameweek));
+        }
 
         return reply.code(200).send({
           success: true,
