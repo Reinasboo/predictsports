@@ -1,15 +1,15 @@
 import { FastifyInstance } from 'fastify';
-import { fixturesRoutes } from './fixtures.js';
-import { predictionsRoutes } from './predictions.js';
-import { matchesRoutes } from './matches.js';
-import { liveFeedRoutes } from './live-feed.js';
+import fixturesRoutes from './fixtures.js';
+import predictionsRoutes from './predictions.js';
+import matchesRoutes from './matches.js';
+import liveFeedRoutes from './live-feed.js';
 
 export async function initRoutes(fastify: FastifyInstance) {
   // Mount route groups
-  await fastify.register(fixturesRoutes, { prefix: '/api/fixtures' });
-  await fastify.register(predictionsRoutes, { prefix: '/api/predictions' });
-  await fastify.register(matchesRoutes, { prefix: '/api/matches' });
-  await fastify.register(liveFeedRoutes, { prefix: '/api/live' });
+  await fastify.register(fixturesRoutes as any, { prefix: '/api/fixtures' });
+  await fastify.register(predictionsRoutes as any, { prefix: '/api/predictions' });
+  await fastify.register(matchesRoutes as any, { prefix: '/api/matches' });
+  await fastify.register(liveFeedRoutes as any, { prefix: '/api/live' });
 
   // Direct confidence endpoint
   fastify.get<{ Params: { matchId: string } }>(
