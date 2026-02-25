@@ -1,6 +1,7 @@
 import { Telegraf, Context } from 'telegraf';
 import { logger } from '../lib/logger.js';
 import * as formatters from './telegram-formatters.js';
+import { premierLeagueService } from './premier-league.js';
 
 /**
  * Register all Telegram bot commands
@@ -165,37 +166,66 @@ export function registerCommands(bot: Telegraf<Context>) {
     }
   });
 
-  // /analyze command - team analysis
+  // /analyze command - player/team analysis
   bot.command('analyze', async (ctx) => {
     try {
       ctx.sendChatAction('typing');
-      const teamName = ctx.payload?.trim();
+      const input = ctx.payload?.trim();
 
-      if (!teamName) {
-        ctx.reply('*Usage:* /analyze Team Name\n\n*Example:*\n/analyze Manchester City\n/analyze Liverpool', { parse_mode: 'Markdown' }).catch(() => {});
+      if (!input) {
+        ctx.reply('*Usage:* /analyze Player Name or /analyze Team Name\n\n*Examples:*\n/analyze Erling Haaland\n/analyze Manchester City', { parse_mode: 'Markdown' }).catch(() => {});
         return;
       }
 
-      // Mock team data
-      const teamData = {
-        name: teamName,
-        wins: 18,
-        draws: 5,
-        losses: 3,
-        goalsFor: 67,
-        goalsAgainst: 22,
-        form: 'Excellent',
-        momentum: '+5 wins streak',
-        nextMatch: 'vs Arsenal (in 3 days)',
-      };
+      // Try to fetch player stats first
+      const playerStats = await premierLeagueService.getPlayerStats(input);
 
-      const message = formatters.formatTeamAnalysis(teamData);
-      ctx.reply(message, { parse_mode: 'Markdown' }).catch((err) => {
-        logger.error('Failed to send team analysis:', err);
-      });
+      if (playerStats) {
+        const message = formatters.formatPlayerStats(playerStats);
+        ctx.reply(message, { parse_mode: 'Markdown' }).catch((err) => {
+          logger.error('Failed to send player stats:', err);
+        });
+      } else {
+        // Fallback to team analysis
+        const message = formatters.formatTeamAnalysis({
+          name: input,
+          wins: 18,
+          draws: 5,
+          losses: 3,
+          goalsFor: 67,
+          goalsAgainst: 22,
+          form: 'Excellent',
+          momentum: '+5 wins streak',
+          nextMatch: 'vs Arsenal (in 3 days)',
+        });
+        ctx.reply(message, { parse_mode: 'Markdown' }).catch((err) => {
+          logger.error('Failed to send team analysis:', err);
+        });
+      }
     } catch (err) {
       logger.error('Error in /analyze command:', err);
-      ctx.reply(formatters.formatError('analyzing team'), { parse_mode: 'Markdown' }).catch(() => {});
+      ctx.reply(formatters.formatError('analyzing'), { parse_mode: 'Markdown' }).catch(() => {});
+    }
+  });
+
+  // /table command - Premier League standings
+  bot.command('table', async (ctx) => {
+    try {
+      ctx.sendChatAction('typing');
+
+      const table = await premierLeagueService.getLeagueTable();
+
+      if (table && table.length > 0) {
+        const message = formatters.formatLeagueTable(table);
+        ctx.reply(message, { parse_mode: 'Markdown' }).catch((err) => {
+          logger.error('Failed to send league table:', err);
+        });
+      } else {
+        ctx.reply('❌ Unable to fetch Premier League table. Please try again later.', { parse_mode: 'Markdown' }).catch(() => {});
+      }
+    } catch (err) {
+      logger.error('Error in /table command:', err);
+      ctx.reply(formatters.formatError('fetching league table'), { parse_mode: 'Markdown' }).catch(() => {});
     }
   });
 

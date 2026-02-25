@@ -9,6 +9,7 @@ export const env = {
   RATE_LIMIT: parseInt(process.env.RATE_LIMIT || '100'),
   RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW || '900'),
   PYTHON_ENGINE_URL: process.env.PYTHON_ENGINE_URL || 'http://localhost:8001',
+  PL_API_URL: process.env.PL_API_URL || 'http://localhost:5000',
   RAPIDAPI_KEY: process.env.RAPIDAPI_KEY || '',
   FOOTBALL_DATA_API_KEY: process.env.FOOTBALL_DATA_API_KEY || '',
   ODDS_API_KEY: process.env.ODDS_API_KEY || '',

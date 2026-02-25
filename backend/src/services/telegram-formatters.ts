@@ -5,18 +5,20 @@
 export function formatWelcomeMessage(): string {
   return `🎯 *Welcome to Predictsports*
 
-I'm your AI sports prediction assistant. I provide real-time match analysis, win probabilities, and expert insights using advanced ML models.
+I'm your AI sports prediction assistant. I provide real-time match analysis, win probabilities, and expert insights using advanced ML models. Plus, live Premier League data!
 
 *Available Commands:*
 /today - Today's fixtures & predictions
 /match Team A vs Team B - Predict a specific match
 /gameweek - All upcoming fixtures
-/analyze Team - Team form & analysis
-/help - Show this help menu
+/analyze Player/Team - Player stats or team form
+/table - Premier League standings
+/help - Show all commands
 
 *Example:*
 /match Manchester City vs Arsenal
-/analyze Liverpool
+/analyze Erling Haaland
+/table
 
 Let's predict some matches! ⚽`;
 }
@@ -29,8 +31,9 @@ export function formatHelpMessage(): string {
 /match <Team A> vs <Team B> - Predict specific match
 /gameweek - Upcoming week's fixtures
 
-*Analysis:*
-/analyze <Team> - Team form summary
+*Premier League:*
+/analyze <Player/Team> - Player stats or team form
+/table - Premier League standings
 
 *Info:*
 /start - Welcome message
@@ -38,7 +41,8 @@ export function formatHelpMessage(): string {
 
 *Example Usage:*
 /match Chelsea vs Manchester United
-/analyze Tottenham
+/analyze Erling Haaland
+/table
 
 Questions? I'm here to help! 💡`;
 }
@@ -170,4 +174,92 @@ Something went wrong while ${context}.
 Please try again later or use /help for commands.
 
 *Contact:* Report issues to @predictsports 🤖`;
+}
+
+/**
+ * Format player statistics from Premier League API
+ */
+export function formatPlayerStats(player: any): string {
+  return `👤 *${player.name || 'Player'}*
+
+*Position:* ${player.position || 'N/A'}
+*Club:* ${player.club || 'N/A'}
+*Nationality:* ${player.nationality || 'N/A'}
+*Date of Birth:* ${player.dateOfBirth || 'N/A'}
+*Height:* ${player.height || 'N/A'}
+
+*Key Stats:*
+${formatPlayerStatsData(player.keyStats)}
+
+_Data from Premier League_ ⚽`;
+}
+
+/**
+ * Format player key stats object
+ */
+function formatPlayerStatsData(stats: any): string {
+  if (!stats) return 'No stats available';
+
+  let formatted = '';
+
+  if (typeof stats === 'string') {
+    formatted = stats;
+  } else if (typeof stats === 'object') {
+    // Format object stats
+    Object.entries(stats).forEach(([key, value]) => {
+      formatted += `• ${key}: ${value}\n`;
+    });
+  }
+
+  return formatted || 'No stats available';
+}
+
+/**
+ * Format Premier League table standings
+ */
+export function formatLeagueTable(table: any[]): string {
+  if (!table || table.length === 0) {
+    return '📊 League table unavailable';
+  }
+
+  let message = '🏆 *Premier League Table*\n\n';
+  message += '`POS | TEAM              | P  | W  | D  | L  | GD | PTS`\n';
+  message += '`────────────────────────────────────────────────────`\n';
+
+  // Show top 10 and bottom 3
+  const topTeams = table.slice(0, 10);
+  const bottomTeams = table.slice(-3);
+
+  topTeams.forEach((row, idx) => {
+    const pos = String(row.position || idx + 1).padStart(2);
+    const team = (row.team || 'Team').substring(0, 15).padEnd(15);
+    const played = String(row.played || 0).padStart(2);
+    const wins = String(row.wins || 0).padStart(2);
+    const draws = String(row.draws || 0).padStart(2);
+    const losses = String(row.losses || 0).padStart(2);
+    const gd = String(row.goalDifference || 0).padStart(2);
+    const pts = String(row.points || 0).padStart(3);
+
+    message += `\`${pos} | ${team} | ${played} | ${wins} | ${draws} | ${losses} | ${gd} | ${pts}\`\n`;
+  });
+
+  if (bottomTeams.length > 0) {
+    message += `\`────────────────────────────────────────────────────\`\n`;
+
+    bottomTeams.forEach((row, idx) => {
+      const pos = String(row.position || '?').padStart(2);
+      const team = (row.team || 'Team').substring(0, 15).padEnd(15);
+      const played = String(row.played || 0).padStart(2);
+      const wins = String(row.wins || 0).padStart(2);
+      const draws = String(row.draws || 0).padStart(2);
+      const losses = String(row.losses || 0).padStart(2);
+      const gd = String(row.goalDifference || 0).padStart(2);
+      const pts = String(row.points || 0).padStart(3);
+
+      message += `\`${pos} | ${team} | ${played} | ${wins} | ${draws} | ${losses} | ${gd} | ${pts}\`\n`;
+    });
+  }
+
+  message += '\n_Updated from Premier League_ 🏴󠁧󠁢󠁥󠁮󠁧󠁿';
+  return message;
 }
