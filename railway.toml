@@ -1,0 +1,29 @@
+[build]
+builder = "dockerfile"
+dockerfile = "./backend/Dockerfile"
+context = "./"
+
+[[services]]
+name = "backend"
+provider = "dockerfile"
+numReplicas = 1
+
+[services.variables]
+PORT = "3001"
+NODE_ENV = "production"
+HOST = "0.0.0.0"
+LOG_LEVEL = "info"
+
+[[services.tcp]]
+port = 3001
+healthCheck = "/api/health"
+healthCheckInterval = 10
+healthCheckTimeout = 5
+healthCheckRetries = 3
+
+[[databases]]
+provider = "postgresql"
+name = "predictsports"
+
+[[databases]]
+provider = "redis"
