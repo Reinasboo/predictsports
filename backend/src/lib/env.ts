@@ -1,0 +1,18 @@
+export const env = {
+  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://predictsports:predictsports_dev@localhost:5432/predictsports',
+  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+  PORT: parseInt(process.env.PORT || '3000'),
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  CORS_ORIGINS: process.env.CORS_ORIGINS || 'http://localhost:3001,http://localhost:3000',
+  JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-key',
+  RATE_LIMIT: parseInt(process.env.RATE_LIMIT || '100'),
+  RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW || '900'),
+  PYTHON_ENGINE_URL: process.env.PYTHON_ENGINE_URL || 'http://localhost:8001',
+  RAPIDAPI_KEY: process.env.RAPIDAPI_KEY || '',
+  FOOTBALL_DATA_API_KEY: process.env.FOOTBALL_DATA_API_KEY || '',
+  ODDS_API_KEY: process.env.ODDS_API_KEY || '',
+  OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY || '',
+  CACHE_TTL: parseInt(process.env.CACHE_TTL || '300'),
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
+};

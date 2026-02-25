@@ -1,0 +1,147 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: predictsports-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-predictsports}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-predictsports_db}
+      POSTGRES_INITDB_ARGS: "-c timezone=UTC"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - predictsports-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-predictsports}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Pub/Sub
+  redis:
+    image: redis:7-alpine
+    container_name: predictsports-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_dev_123}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - predictsports-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Fastify Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: predictsports-backend
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-predictsports}:${POSTGRES_PASSWORD:-dev_password_123}@postgres:5432/${POSTGRES_DB:-predictsports_db}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_123}@redis:6379
+      API_FOOTBALL_KEY: ${API_FOOTBALL_KEY}
+      FOOTBALL_DATA_KEY: ${FOOTBALL_DATA_KEY}
+      ODDS_API_KEY: ${ODDS_API_KEY}
+      WEATHER_API_KEY: ${WEATHER_API_KEY}
+      ENGINE_URL: http://engine:8000
+      SOCKET_URL: http://localhost:3001
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - predictsports-net
+    volumes:
+      - ./backend/src:/app/src
+    command: npm run dev
+
+  # Python FastAPI Engine
+  engine:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    container_name: predictsports-engine
+    environment:
+      PYTHONUNBUFFERED: 1
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_123}@redis:6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - predictsports-net
+    volumes:
+      - ./engine/src:/app/src
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Data Pipeline Worker
+  pipeline:
+    build:
+      context: ./data-pipelines
+      dockerfile: Dockerfile
+    container_name: predictsports-pipeline
+    environment:
+      PYTHONUNBUFFERED: 1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_123}@redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-predictsports}:${POSTGRES_PASSWORD:-dev_password_123}@postgres:5432/${POSTGRES_DB:-predictsports_db}
+      API_FOOTBALL_KEY: ${API_FOOTBALL_KEY}
+      FOOTBALL_DATA_KEY: ${FOOTBALL_DATA_KEY}
+      ODDS_API_KEY: ${ODDS_API_KEY}
+      WEATHER_API_KEY: ${WEATHER_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - predictsports-net
+    volumes:
+      - ./data-pipelines/src:/app/src
+    command: python -m src.scheduler
+
+  # Next.js Frontend (optional - can be deployed to Vercel)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+    container_name: predictsports-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - predictsports-net
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+
+networks:
+  predictsports-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
