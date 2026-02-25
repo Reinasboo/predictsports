@@ -1,0 +1,11 @@
+[MASTER]
+ignore-imports=yes
+disable=import-error
+
+[MESSAGES CONTROL]
+disable=
+    import-error,
+    missing-module-docstring,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-instance-attributes,

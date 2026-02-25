@@ -220,6 +220,8 @@ export async function fixturesRoutes(fastify: FastifyInstance) {
         if (cached) {
           return JSON.parse(cached);
         }
+
+        const gameweek = {
           week: parseInt(week),
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 604800000).toISOString(),
