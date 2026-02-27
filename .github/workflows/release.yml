@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: tag_name
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "Automated release notes for v${{ steps.tag_name.outputs.version }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Changes in this Release" >> release_notes.md
+          git log --oneline $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")..${{ github.ref }} | sed 's/^/- /' >> release_notes.md || echo "- Initial release" >> release_notes.md
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release v${{ steps.tag_name.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+
+      - name: Notify on release
+        run: echo "✅ Released v${{ steps.tag_name.outputs.version }} successfully!"
